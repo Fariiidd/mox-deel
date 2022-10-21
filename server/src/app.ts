@@ -1,5 +1,7 @@
 import puppeteer from "puppeteer";
 
+let data: any = {};
+
 const init = async () => {
   const browser = await puppeteer.launch({
     headless: false,
@@ -10,7 +12,7 @@ const init = async () => {
   const page = await browser.newPage();
   await page.setViewport({ width: 1366, height: 768 });
 
-  await page.goto("https://app.deel.com/login");
+  await page.goto("https://app.deel.com/settings/account-settings");
 
   const inputEmail = await page.waitForSelector("#mui-1");
   const inputPassword = await page.waitForSelector("#mui-2");
@@ -37,6 +39,24 @@ const init = async () => {
     await input5?.type("2");
     await input6?.type("3");
   }
+
+  await page.waitForSelector("div[data-qa=personal-details]");
+  const rowData = await page.$$("div[data-qa=labeled-row]")
+  
+  data.token = await page.evaluate(() => {
+    return localStorage.getItem('token');
+  })  
+
+  for (const item of rowData) {
+    const label = await item.$(".new-labeled-value-label");
+    const value = await item.$(".semi-bold");
+    
+    const getLebel = await label?.evaluate(label => label.innerHTML, label);
+    const getValue = await value?.evaluate(value => (value as HTMLElement).innerText, value);
+        
+    data[getLebel as string] = getValue || "";
+  }
+  console.log(data);
 };
 
 init();
