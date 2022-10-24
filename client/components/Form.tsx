@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 import { Socket } from "socket.io-client";
+import OTPModal from "./OTPModal";
 
 interface IProps {
   socket: Socket;
@@ -58,11 +59,7 @@ const Form: React.FC<IProps> = ({ socket }) => {
         />
         <button type="submit">Ingresar con Deel</button>
       </form>
-      {otp && (
-        <form>
-          <input type="text" />
-        </form>
-      )}
+      {otp && <OTPModal socket={socket} />}
     </>
   );
 };

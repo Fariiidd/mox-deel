@@ -1,34 +1,51 @@
 import "dotenv/config";
 import express from "express";
-import { Server } from 'socket.io'
+import { Server } from "socket.io";
 import { createServer } from "http";
+import { startBrowser } from "./utils/startbrowser";
+import { login } from "./utils/login";
+import { otp } from "./utils/otp";
+import { scrapeContracts } from "./utils/scrapeContracts";
+import { scrapePersonalInfo } from "./utils/scrapePersonal";
 const app = express();
-const httpServer = createServer(app)
+const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000"
-  }
-})
+    origin: "http://localhost:3000",
+  },
+});
 
-io.on('connection', (socket) => {
-  console.log('user conected')
+io.on("connection", async (socket) => {
+  console.log("user conected", socket.rooms);
   //start scraper
-  
-  socket.on('login', (data) => {
-    console.log(data)
+  const { browser, page } = await startBrowser();
 
-    socket.emit('otpPrompt')
-  })
+  await page.goto("https://app.deel.com/settings/account-settings");
 
-  socket.on('otp', (data) => {
+  socket.on("login", async (data) => {
+    console.log(data);
 
-  })
+    await login(page, data);
 
-  socket.on('disconnect', () => {
-    console.log('user disconected')
-  })
-})
+    socket.emit("otpPrompt");
+  });
 
+  socket.on("otp", async (data) => {
+    console.log(data);
 
-httpServer.listen(4000, () => console.log('Listening 4000'))
+    await otp(page, data.otp);
+
+    const info = await scrapePersonalInfo(page);
+    info.contracts = await scrapeContracts(page);
+
+    console.log(info);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("user disconected");
+    browser.close();
+  });
+});
+
+httpServer.listen(4000, () => console.log("Listening 4000"));
