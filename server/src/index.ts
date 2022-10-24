@@ -24,22 +24,28 @@ io.on("connection", async (socket) => {
   await page.goto("https://app.deel.com/settings/account-settings");
 
   socket.on("login", async (data) => {
-    console.log(data);
+    const status = await login(page, data);
 
-    await login(page, data);
-
-    socket.emit("otpPrompt");
+    if (status) {
+      socket.emit("error", { type: "login" });
+      console.log("error login");
+    } else {
+      socket.emit("otpPrompt");
+    }
   });
 
   socket.on("otp", async (data) => {
-    console.log(data);
+    const status = await otp(page, data.otp);
 
-    await otp(page, data.otp);
+    if (status) {
+      socket.emit("error", { type: "otp" });
+      console.log("error otp");
+    } else {
+      const info = await scrapePersonalInfo(page);
+      info.contracts = await scrapeContracts(page);
 
-    const info = await scrapePersonalInfo(page);
-    info.contracts = await scrapeContracts(page);
-
-    console.log(info);
+      console.log(info);
+    }
   });
 
   socket.on("disconnect", () => {

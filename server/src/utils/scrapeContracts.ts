@@ -3,7 +3,11 @@ import { Page } from "puppeteer";
 export const scrapeContracts = async (page: Page) => {
   const contracts = [];
 
-  await page.waitForSelector(".odd-table");
+  try {
+    await page.waitForSelector(".odd-table");
+  } catch {
+    return [];
+  }
 
   const table = await page.$("table.odd-table");
 
